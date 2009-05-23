@@ -86,7 +86,7 @@ static void pack_list(uint32_t mask, const uint32_t *src, uint32_t *dest)
 			*dest++ = *src;
 }
 
-xcb_void_cookie_t
+static xcb_void_cookie_t
 xcb_aux_change_window_attributes_checked (xcb_connection_t      *c,
                                           xcb_window_t           window,
                                           uint32_t               mask,
@@ -930,7 +930,7 @@ static void run()
     }
 }
 
-void scan()
+static void scan()
 {
     xcb_query_tree_cookie_t c = xcb_query_tree(conn, screen->root);
 
