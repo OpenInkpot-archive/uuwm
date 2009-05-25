@@ -1,3 +1,9 @@
+uuwm (0.1-2) asimov; urgency=low
+
+  * uuwm rewritten and simplified.
+
+ -- Mikhail Gusarov <dottedmag@dottedmag.net>  Tue, 26 May 2009 00:42:08 +0700
+
 uuwm (0.1-1) asimov; urgency=low
 
   * Initial release.
