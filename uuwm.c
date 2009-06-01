@@ -695,7 +695,6 @@ static int enternotify(void* p, xcb_connection_t* conn, xcb_enter_notify_event_t
     return 0;
 }
 
-/* Uhm? */
 static int focusin(void* p, xcb_connection_t* conn, xcb_focus_in_event_t* e)
 {
     /* there are some broken focus acquiring clients */
