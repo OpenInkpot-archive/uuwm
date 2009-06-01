@@ -156,6 +156,36 @@ static void configure(xcb_window_t win, uint16_t mask,
     }
 }
 
+static void arrange_updated(client_t* c, uint16_t m, xcb_params_configure_window_t* p)
+{
+    if(c->is_floating)
+    {
+        if(c->x < wx) { XCB_AUX_ADD_PARAM(&m, p, x, wx); c->x = wx; }
+        if(c->y < wy) { XCB_AUX_ADD_PARAM(&m, p, y, wy); c->y = wy; }
+        if(c->w > ww) { XCB_AUX_ADD_PARAM(&m, p, width, ww); c->w = ww; }
+        if(c->h > wh) { XCB_AUX_ADD_PARAM(&m, p, height, wh); c->h = wh; }
+    }
+    else
+    {
+        if(c->x != wx) { XCB_AUX_ADD_PARAM(&m, p, x, wx); c->x = wx; }
+        if(c->y != wy) { XCB_AUX_ADD_PARAM(&m, p, y, wy); c->y = wy; }
+        if(c->w != ww) { XCB_AUX_ADD_PARAM(&m, p, width, ww); c->w = ww; }
+        if(c->h != wx) { XCB_AUX_ADD_PARAM(&m, p, height, wh); c->h = wh; }
+    }
+
+    if(c->bw != 0) { XCB_AUX_ADD_PARAM(&m, p, border_width, 0); c->bw = 0; }
+
+    /* ICCCM 4.1.5: Do not send synthetic ConfigureNotify if window borders or
+     * size have changed */
+    if(!(m & ((1<<XCB_AUX_INTERNAL_OFFSETOF(p, width))
+              ||(1<<XCB_AUX_INTERNAL_OFFSETOF(p, height))
+              ||(1<<XCB_AUX_INTERNAL_OFFSETOF(p, border_width)))))
+        configure_event(c);
+
+    if(m)
+        configure(c->win, m, p);
+}
+
 /*
  * Evaluates client state and adjusts it according to environment.
  *
@@ -163,36 +193,13 @@ static void configure(xcb_window_t win, uint16_t mask,
  */
 static void arrange(client_t* c)
 {
+    debug("arrange: client %d (is_floating: %d)\n", c, c->is_floating);
+
     uint16_t m = 0;
     xcb_params_configure_window_t p;
-
-    if(c->is_floating)
-    {
-        if(c->x < wx) { XCB_AUX_ADD_PARAM(&m, &p, x, wx); c->x = wx; }
-        if(c->y < wy) { XCB_AUX_ADD_PARAM(&m, &p, y, wy); c->y = wy; }
-        if(c->w > ww) { XCB_AUX_ADD_PARAM(&m, &p, width, ww); c->w = ww; }
-        if(c->h > wh) { XCB_AUX_ADD_PARAM(&m, &p, height, wh); c->h = wh; }
-    }
-    else
-    {
-        if(c->x != wx) { XCB_AUX_ADD_PARAM(&m, &p, x, wx); c->x = wx; }
-        if(c->y != wy) { XCB_AUX_ADD_PARAM(&m, &p, y, wy); c->y = wy; }
-        if(c->w != ww) { XCB_AUX_ADD_PARAM(&m, &p, width, ww); c->w = ww; }
-        if(c->h != wx) { XCB_AUX_ADD_PARAM(&m, &p, height, wh); c->h = wh; }
-    }
-
-    if(c->bw != 0) { XCB_AUX_ADD_PARAM(&m, &p, border_width, 0); c->bw = 0; }
-
-    /* ICCCM 4.1.5: Do not send synthetic ConfigureNotify if window borders or
-     * size have changed */
-    if(!(m & ((1<<XCB_AUX_INTERNAL_OFFSETOF(&p, width))
-              ||(1<<XCB_AUX_INTERNAL_OFFSETOF(&p, height))
-              ||(1<<XCB_AUX_INTERNAL_OFFSETOF(&p, border_width)))))
-        configure_event(c);
-
-    if(m)
-        configure(c->win, m, &p);
+    arrange_updated(c, m, &p);
 }
+
 
 static void updategeom()
 {
@@ -443,8 +450,6 @@ static void manage(xcb_window_t w)
 	attach(c);
 	attachstack(c);
 
-    set_focus(XCB_INPUT_FOCUS_POINTER_ROOT, w);
-
     if(xcb_request_check(conn, xcb_map_window_checked(conn, w)))
         die("Unable to map window.\n");
 
@@ -586,15 +591,24 @@ static int configurerequest(void* p, xcb_connection_t* conn, xcb_configure_reque
 
 	if(c)
     {
+        uint16_t m = 0;
+        xcb_params_configure_window_t p;
         /* Adjust geometry */
-        if(e->value_mask & XCB_CONFIG_WINDOW_X) c->x = e->x;
-        if(e->value_mask & XCB_CONFIG_WINDOW_Y) c->y = e->y;
-        if(e->value_mask & XCB_CONFIG_WINDOW_WIDTH) c->w = e->width;
-        if(e->value_mask & XCB_CONFIG_WINDOW_HEIGHT) c->h = e->height;
-        if(e->value_mask & XCB_CONFIG_WINDOW_BORDER_WIDTH) c->bw = e->border_width;
-        arrange(c);
+        if(e->value_mask & XCB_CONFIG_WINDOW_X) { XCB_AUX_ADD_PARAM(&m, &p, x, e->x); c->x = e->x; }
+        if(e->value_mask & XCB_CONFIG_WINDOW_Y) { XCB_AUX_ADD_PARAM(&m, &p, y, e->y); c->y = e->y; }
+        if(e->value_mask & XCB_CONFIG_WINDOW_WIDTH) { XCB_AUX_ADD_PARAM(&m, &p, width, e->width); c->w = e->width; }
+        if(e->value_mask & XCB_CONFIG_WINDOW_HEIGHT)
+        {
+            XCB_AUX_ADD_PARAM(&m, &p, height, e->height);
+            c->h = e->height;
+        }
+        if(e->value_mask & XCB_CONFIG_WINDOW_BORDER_WIDTH)
+        {
+            XCB_AUX_ADD_PARAM(&m, &p, border_width, e->border_width);
+            c->bw = e->border_width;
+        }
 
-        /* Adjust placement */
+        arrange_updated(c, m, &p);
 
         /* Respects only XRaiseWindow */
         if(e->value_mask & XCB_CONFIG_WINDOW_STACK_MODE
