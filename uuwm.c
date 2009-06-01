@@ -800,10 +800,11 @@ int main(int argc, char *argv[])
 		die("usage: uuwm [-v]\n");
 
     int default_screen;
-    if(!(conn = xcb_connect(NULL, &default_screen)))
-		die("cannot open display\n");
+    conn = xcb_connect(NULL, &default_screen);
+    if(xcb_connection_has_error(conn))
+		die("uuwm: cannot open display %s\n", getenv("DISPLAY") ? getenv("DISPLAY") : "<NULL>");
     if(!(screen = xcb_aux_get_screen(conn, default_screen)))
-        die("cannot obtain default screen\n");
+        die("uuwm: cannot obtain default screen\n");
 
 	checkotherwm();
 	setup();
