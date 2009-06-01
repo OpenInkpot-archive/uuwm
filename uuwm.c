@@ -390,17 +390,22 @@ static void setclientstate(client_t *c, long state, bool ignore_no_window)
 
 static void set_focus(uint8_t revert_to, xcb_window_t focus)
 {
+    debug("set_focus: win: %d\n", focus);
+
     xcb_void_cookie_t c
         = xcb_set_input_focus_checked(conn, revert_to, focus, XCB_CURRENT_TIME);
     xcb_generic_error_t* err = xcb_request_check(conn, c);
     if(err)
     {
+        debug("set_focus: error in xcb_set_focus (%d)\n", err->error_code);
         if(err->error_code != XCB_WINDOW)
             die("Unable to set input focus (%d) on %x (%d)\n",
                 revert_to, focus, err->error_code);
         /* BadWindow is ignored, as windows may disappear at any time */
         free(err);
     }
+    else
+        debug("set_focus: ok\n");
 }
 
 static void focus(client_t *c)
@@ -424,6 +429,8 @@ static void focus(client_t *c)
 
 static void manage(xcb_window_t w)
 {
+    debug("manage: win %d\n", w);
+
 	client_t *c;
 	if(!(c = calloc(1, sizeof(client_t))))
 		die("fatal: could not malloc() %u bytes\n", sizeof(client_t));
@@ -468,11 +475,14 @@ static void manage(xcb_window_t w)
     }
 
 	attach(c);
+
+    debug("manage: attaching %d to a stack\n", c->win);
 	attachstack(c);
 
     if(xcb_request_check(conn, xcb_map_window_checked(conn, w)))
-        die("Unable to map window.\n");
+        die("manage: unable to map window.\n");
 
+    debug("manage: win: %d, state: WM_STATE_NORMAL\n", c->win);
 	setclientstate(c, XCB_WM_STATE_NORMAL, false);
 }
 
@@ -722,10 +732,19 @@ static int maprequest(void* p, xcb_connection_t* conn, xcb_map_request_event_t* 
 
 static int mapnotify(void* p, xcb_connection_t* conn, xcb_map_notify_event_t* e)
 {
+    debug("mapnotify: win: %d\n", e->window);
     /* If newly mapped window is at top of stack, set the focus. It can't be
      * done at manage() as window is not visible yet there */
     if(stack && e->window == stack->win)
+    {
+        debug("mapnotify: focusing %d\n", e->window);
         set_focus(XCB_INPUT_FOCUS_POINTER_ROOT, e->window);
+    }
+    else
+    {
+        debug("mapnotify: not focusing %d.\n", stack ? stack->win : -1);
+    }
+
     return 0;
 }
 
