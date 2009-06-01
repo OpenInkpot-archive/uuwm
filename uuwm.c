@@ -69,7 +69,6 @@ static int sx, sy, sw, sh; /* X display screen geometry x, y, w, h */
 static int wx, wy, ww, wh; /* window area geometry x, y, w, h, docks excluded */
 
 static client_t *clients = NULL;
-static client_t *sel = NULL;
 static client_t *stack = NULL;
 
 /* Omission from xcb-aux */
@@ -421,8 +420,6 @@ static void focus(client_t *c)
         win = screen->root;
 
     set_focus(XCB_INPUT_FOCUS_POINTER_ROOT, win);
-
-	sel = c;
 }
 
 static void manage(xcb_window_t w)
@@ -489,10 +486,15 @@ static void unmanage(client_t *c)
     configure(c->win, mask, &params);
 
 	detach(c);
-	detachstack(c);
-	if(sel == c)
+    if(stack == c)
+    {
+        detachstack(c);
 		focus(NULL);
-	setclientstate(c, XCB_WM_STATE_WITHDRAWN, true);
+    }
+    else
+        detachstack(c);
+
+    setclientstate(c, XCB_WM_STATE_WITHDRAWN, true);
 	free(c);
 
     xcb_request_check(conn, xcb_ungrab_server(conn));
@@ -698,8 +700,8 @@ static int enternotify(void* p, xcb_connection_t* conn, xcb_enter_notify_event_t
 static int focusin(void* p, xcb_connection_t* conn, xcb_focus_in_event_t* e)
 {
     /* there are some broken focus acquiring clients */
-    if(sel && e->event != sel->win)
-        set_focus(XCB_INPUT_FOCUS_POINTER_ROOT, sel->win);
+    if(stack && e->event != stack->win)
+        set_focus(XCB_INPUT_FOCUS_POINTER_ROOT, stack->win);
     return 0;
 }
 
