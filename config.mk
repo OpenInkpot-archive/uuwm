@@ -7,7 +7,7 @@ VERSION = 0.1
 PREFIX = /usr/local
 
 # libs
-L=xcb xcb-randr xcb-aux xcb-atom xcb-icccm
+L=xcb xcb-aux xcb-atom xcb-icccm
 
 # flags
 CPPFLAGS = -DVERSION=\"${VERSION}\"
