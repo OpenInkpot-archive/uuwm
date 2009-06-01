@@ -101,6 +101,26 @@ static void die(const char* errstr, ...)
 	exit(EXIT_FAILURE);
 }
 
+static void debug(const char* errstr, ...)
+{
+    static bool _debug_init = false;
+    static bool _debug = false;
+
+    if(!_debug_init)
+    {
+        _debug_init = true;
+        _debug = getenv("DEBUG") != NULL;
+    }
+
+    if(!_debug) return;
+
+    fprintf(stderr, "D: ");
+	va_list ap;
+	va_start(ap, errstr);
+	vfprintf(stderr, errstr, ap);
+	va_end(ap);
+}
+
 static void checkotherwm()
 {
     uint32_t mask = 0;
@@ -143,12 +163,15 @@ static void configure_event(client_t* c)
 static void configure(xcb_window_t win, uint16_t mask,
                       xcb_params_configure_window_t* params)
 {
+    debug("configure: win: %d, mask %d\n", win, mask);
+
     xcb_void_cookie_t c
         = xcb_aux_configure_window(conn, win, mask, params);
 
     xcb_generic_error_t* err = xcb_request_check(conn, c);
     if(err)
     {
+        debug("configure: xcb_aux_configure_window error: %d\n", err->error_code);
         if(err->error_code != XCB_WINDOW)
             die("Unable to configure window %x (%d)\n", win, err->error_code);
         /* BadWindow is ignored as windows may disappear at any time */
