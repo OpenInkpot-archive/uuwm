@@ -1,3 +1,13 @@
+uuwm (0.1-5) asimov; urgency=low
+
+  * Really fixed focusing window when it's being added to "managed" list
+    this time.
+  * Lot of debugging statements (enabled by setting DEBUG environment
+    variable)
+  * Dropped unused libxcb-randr dependency.
+
+ -- Mikhail Gusarov <dottedmag@dottedmag.net>  Tue, 02 Jun 2009 01:49:41 +0700
+
 uuwm (0.1-4) asimov; urgency=low
 
   * Properly focusing window when it's being added to "managed" list.
