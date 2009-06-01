@@ -39,13 +39,13 @@ typedef struct client_t
     xcb_window_t win;
     int x, y, w, h;
 
-	int bw;
+    int bw;
     int oldbw; /* To be restored on WM exit */
 
     bool is_floating;
 
-	struct client_t* next;
-	struct client_t* snext;
+    struct client_t* next;
+    struct client_t* snext;
 } client_t;
 
 static xcb_connection_t* conn;
@@ -74,9 +74,9 @@ static client_t *stack = NULL;
 /* Omission from xcb-aux */
 static void pack_list(uint32_t mask, const uint32_t *src, uint32_t *dest)
 {
-	for ( ; mask; mask >>= 1, src++)
-		if (mask & 1)
-			*dest++ = *src;
+    for ( ; mask; mask >>= 1, src++)
+        if (mask & 1)
+            *dest++ = *src;
 }
 
 static xcb_void_cookie_t
@@ -85,19 +85,19 @@ xcb_aux_change_window_attributes_checked (xcb_connection_t      *c,
                                           uint32_t               mask,
                                           const xcb_params_cw_t *params)
 {
-	uint32_t value_list[16];
-	pack_list(mask, (const uint32_t *)params, value_list);
-	return xcb_change_window_attributes_checked( c, window, mask, value_list );
+    uint32_t value_list[16];
+    pack_list(mask, (const uint32_t *)params, value_list);
+    return xcb_change_window_attributes_checked( c, window, mask, value_list );
 }
 /* End of omission */
 
 static void die(const char* errstr, ...)
 {
-	va_list ap;
-	va_start(ap, errstr);
-	vfprintf(stderr, errstr, ap);
-	va_end(ap);
-	exit(EXIT_FAILURE);
+    va_list ap;
+    va_start(ap, errstr);
+    vfprintf(stderr, errstr, ap);
+    va_end(ap);
+    exit(EXIT_FAILURE);
 }
 
 static void debug(const char* errstr, ...)
@@ -114,10 +114,10 @@ static void debug(const char* errstr, ...)
     if(!_debug) return;
 
     fprintf(stderr, "D: ");
-	va_list ap;
-	va_start(ap, errstr);
-	vfprintf(stderr, errstr, ap);
-	va_end(ap);
+    va_list ap;
+    va_start(ap, errstr);
+    vfprintf(stderr, errstr, ap);
+    va_end(ap);
 }
 
 static void checkotherwm()
@@ -132,7 +132,7 @@ static void checkotherwm()
                                                    mask, &params);
 
     if(xcb_request_check(conn, c))
-		die("another window manager is already running\n");
+        die("another window manager is already running\n");
 }
 
 static void configure_event(client_t* c)
@@ -263,18 +263,18 @@ static void intern_atoms(int count, xcb_atom_t atoms[], const char* atom_names[]
 
 static void setup()
 {
-	/* init screen */
-	sx = 0;
-	sy = 0;
-	sw = screen->width_in_pixels;
-	sh = screen->height_in_pixels;
+    /* init screen */
+    sx = 0;
+    sy = 0;
+    sw = screen->width_in_pixels;
+    sh = screen->height_in_pixels;
 
-	updategeom();
+    updategeom();
 
     intern_atoms(sizeof(atom)/sizeof(atom[0]), atom, atom_names);
 
     /* FIXME: busy cursor is nice
-	wa.cursor = cursor = XCreateFontCursor(dpy, XC_watch);
+    wa.cursor = cursor = XCreateFontCursor(dpy, XC_watch);
     XCB_AUX_ADD_PARAM(&masp, &params, cursor, ...)
     */
 
@@ -286,9 +286,9 @@ static void setup()
                                       atom + NetFirst);
 
     if(xcb_request_check(conn, c))
-		die("Unable to register myself as NetWM-compliant WM.\n");
+        die("Unable to register myself as NetWM-compliant WM.\n");
 
-	/* select for events */
+    /* select for events */
     uint32_t mask = 0;
     xcb_params_cw_t params;
     XCB_AUX_ADD_PARAM(&mask, &params, event_mask,
@@ -328,21 +328,21 @@ static xcb_window_t get_transient_for(xcb_window_t win)
 
 static client_t *getclient(xcb_window_t w)
 {
-	client_t *c = clients;
+    client_t *c = clients;
     while(c && c->win != w)
         c = c->next;
-	return c;
+    return c;
 }
 
 static void attach(client_t *c)
 {
-	c->next = clients;
-	clients = c;
+    c->next = clients;
+    clients = c;
 }
 
 static void detach(client_t *c)
 {
-	client_t **tc = &clients;
+    client_t **tc = &clients;
 
     while(*tc && *tc != c)
         tc = &(*tc)->next;
@@ -352,13 +352,13 @@ static void detach(client_t *c)
 
 static void attachstack(client_t *c)
 {
-	c->snext = stack;
-	stack = c;
+    c->snext = stack;
+    stack = c;
 }
 
 static void detachstack(client_t *c)
 {
-	client_t **tc = &stack;
+    client_t **tc = &stack;
 
     while(*tc && *tc != c)
         tc = &(*tc)->snext;
@@ -368,7 +368,7 @@ static void detachstack(client_t *c)
 
 static void setclientstate(client_t *c, long state, bool ignore_no_window)
 {
-	long data[] = {state, XCB_NONE};
+    long data[] = {state, XCB_NONE};
 
     xcb_void_cookie_t cookie =
         xcb_change_property_checked(
@@ -412,16 +412,16 @@ static void focus(client_t *c)
 {
     xcb_window_t win;
 
-	if(!c)
+    if(!c)
         c = stack;
-	if(c)
+    if(c)
     {
-		detachstack(c);
-		attachstack(c);
+        detachstack(c);
+        attachstack(c);
 
         win = c->win;
-	}
-	else
+    }
+    else
         win = screen->root;
 
     set_focus(XCB_INPUT_FOCUS_POINTER_ROOT, win);
@@ -431,10 +431,10 @@ static void manage(xcb_window_t w)
 {
     debug("manage: win %d\n", w);
 
-	client_t *c;
-	if(!(c = calloc(1, sizeof(client_t))))
-		die("fatal: could not malloc() %u bytes\n", sizeof(client_t));
-	c->win = w;
+    client_t *c;
+    if(!(c = calloc(1, sizeof(client_t))))
+        die("fatal: could not malloc() %u bytes\n", sizeof(client_t));
+    c->win = w;
 
     xcb_window_t transient_for = get_transient_for(w);
     c->is_floating = transient_for != XCB_NONE && getclient(transient_for) != NULL;
@@ -447,12 +447,12 @@ static void manage(xcb_window_t w)
         return;
     }
 
-	/* geometry */
-	c->x = geom->x;
-	c->y = geom->y;
-	c->w = geom->width;
-	c->h = geom->height;
-	c->bw = c->oldbw = geom->border_width;
+    /* geometry */
+    c->x = geom->x;
+    c->y = geom->y;
+    c->w = geom->width;
+    c->h = geom->height;
+    c->bw = c->oldbw = geom->border_width;
 
     free(geom);
 
@@ -474,16 +474,16 @@ static void manage(xcb_window_t w)
             die("Unable to select events for window.\n");
     }
 
-	attach(c);
+    attach(c);
 
     debug("manage: attaching %d to a stack\n", c->win);
-	attachstack(c);
+    attachstack(c);
 
     if(xcb_request_check(conn, xcb_map_window_checked(conn, w)))
         die("manage: unable to map window.\n");
 
     debug("manage: win: %d, state: WM_STATE_NORMAL\n", c->win);
-	setclientstate(c, XCB_WM_STATE_NORMAL, false);
+    setclientstate(c, XCB_WM_STATE_NORMAL, false);
 }
 
 static void unmanage(client_t *c)
@@ -495,17 +495,17 @@ static void unmanage(client_t *c)
     XCB_AUX_ADD_PARAM(&mask, &params, border_width, c->oldbw);
     configure(c->win, mask, &params);
 
-	detach(c);
+    detach(c);
     if(stack == c)
     {
         detachstack(c);
-		focus(NULL);
+        focus(NULL);
     }
     else
         detachstack(c);
 
     setclientstate(c, XCB_WM_STATE_WITHDRAWN, true);
-	free(c);
+    free(c);
 
     xcb_request_check(conn, xcb_ungrab_server(conn));
 }
@@ -622,9 +622,9 @@ static void raise(client_t* c)
 
 static int configurerequest(void* p, xcb_connection_t* conn, xcb_configure_request_event_t* e)
 {
-	client_t* c = getclient(e->window);
+    client_t* c = getclient(e->window);
 
-	if(c)
+    if(c)
     {
         uint16_t m = 0;
         xcb_params_configure_window_t p;
@@ -650,8 +650,8 @@ static int configurerequest(void* p, xcb_connection_t* conn, xcb_configure_reque
            && (!(e->value_mask & XCB_CONFIG_WINDOW_SIBLING)
                || e->sibling == XCB_NONE))
             raise(c);
-	}
-	else
+    }
+    else
     {
         /* Not our business, just pass it through */
 
@@ -666,13 +666,13 @@ static int configurerequest(void* p, xcb_connection_t* conn, xcb_configure_reque
         params.stack_mode = e->stack_mode;
 
         configure(e->window, e->value_mask, &params);
-	}
+    }
     return 0;
 }
 
 static int configurenotify(void* p, xcb_connection_t* conn, xcb_configure_notify_event_t *e)
 {
-	if(e->window == screen->root)
+    if(e->window == screen->root)
     {
         if (e->width != sw || e->height != sh)
         {
@@ -680,13 +680,13 @@ static int configurenotify(void* p, xcb_connection_t* conn, xcb_configure_notify
             sh = e->height;
             updategeom();
         }
-	}
+    }
     return 0;
 }
 
 static int destroynotify(void* p, xcb_connection_t* conn, xcb_destroy_notify_event_t* e)
 {
-	client_t *c = getclient(e->window);
+    client_t *c = getclient(e->window);
     if(c)
         unmanage(c);
     return 0;
@@ -699,11 +699,11 @@ static int enternotify(void* p, xcb_connection_t* conn, xcb_enter_notify_event_t
         || e->detail == XCB_NOTIFY_DETAIL_INFERIOR) && e->event != screen->root)
         return 0;
 
-	client_t* c = getclient(e->event);
-	if(c)
-		focus(c);
-	else
-		focus(NULL);
+    client_t* c = getclient(e->event);
+    if(c)
+        focus(c);
+    else
+        focus(NULL);
     return 0;
 }
 
@@ -767,13 +767,13 @@ static void check_refloat(client_t* c)
 
 static int propertynotify(void* p, xcb_connection_t* conn, xcb_property_notify_event_t* e)
 {
-	client_t *c;
+    client_t *c;
 
-	if((e->window == screen->root) && (e->atom == WM_NAME))
+    if((e->window == screen->root) && (e->atom == WM_NAME))
         return 0; /* ignore */
-	if(e->state == XCB_PROPERTY_DELETE)
-		return 0; /* ignore */
-	if((c = getclient(e->window)))
+    if(e->state == XCB_PROPERTY_DELETE)
+        return 0; /* ignore */
+    if((c = getclient(e->window)))
     {
         if(e->atom == WM_TRANSIENT_FOR)
             check_refloat(c);
@@ -783,9 +783,9 @@ static int propertynotify(void* p, xcb_connection_t* conn, xcb_property_notify_e
 
 static int unmapnotify(void* p, xcb_connection_t* conn, xcb_unmap_notify_event_t* e)
 {
-	client_t *c = getclient(e->window);
+    client_t *c = getclient(e->window);
     if(c)
-		unmanage(c);
+        unmanage(c);
     return 0;
 }
 
@@ -815,34 +815,34 @@ static void run()
 
 static void cleanup()
 {
-	while(stack)
-		unmanage(stack);
+    while(stack)
+        unmanage(stack);
     /* FIXME */
-	//XFreeCursor(dpy, cursor);
+    //XFreeCursor(dpy, cursor);
 
     set_focus(XCB_INPUT_FOCUS_POINTER_ROOT, XCB_INPUT_FOCUS_POINTER_ROOT);
 }
 
 int main(int argc, char *argv[])
 {
-	if(argc == 2 && !strcmp("-v", argv[1]))
-		die("uuwm-"VERSION", © 2006-2009 uuwm engineers, see LICENSE for details\n");
-	else if(argc != 1)
-		die("usage: uuwm [-v]\n");
+    if(argc == 2 && !strcmp("-v", argv[1]))
+        die("uuwm-"VERSION", © 2006-2009 uuwm engineers, see LICENSE for details\n");
+    else if(argc != 1)
+        die("usage: uuwm [-v]\n");
 
     int default_screen;
     conn = xcb_connect(NULL, &default_screen);
     if(xcb_connection_has_error(conn))
-		die("uuwm: cannot open display %s\n", getenv("DISPLAY") ? getenv("DISPLAY") : "<NULL>");
+        die("uuwm: cannot open display %s\n", getenv("DISPLAY") ? getenv("DISPLAY") : "<NULL>");
     if(!(screen = xcb_aux_get_screen(conn, default_screen)))
         die("uuwm: cannot obtain default screen\n");
 
-	checkotherwm();
-	setup();
-	scan();
-	run();
-	cleanup();
+    checkotherwm();
+    setup();
+    scan();
+    run();
+    cleanup();
 
     xcb_disconnect(conn);
-	return 0;
+    return 0;
 }
