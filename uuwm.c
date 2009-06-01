@@ -443,6 +443,8 @@ static void manage(xcb_window_t w)
 	attach(c);
 	attachstack(c);
 
+    set_focus(XCB_INPUT_FOCUS_POINTER_ROOT, w);
+
     if(xcb_request_check(conn, xcb_map_window_checked(conn, w)))
         die("Unable to map window.\n");
 
