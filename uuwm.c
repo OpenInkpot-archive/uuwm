@@ -718,6 +718,15 @@ static int maprequest(void* p, xcb_connection_t* conn, xcb_map_request_event_t* 
     return 0;
 }
 
+static int mapnotify(void* p, xcb_connection_t* conn, xcb_map_notify_event_t* e)
+{
+    /* If newly mapped window is at top of stack, set the focus. It can't be
+     * done at manage() as window is not visible yet there */
+    if(stack && e->window == stack->win)
+        set_focus(XCB_INPUT_FOCUS_POINTER_ROOT, e->window);
+    return 0;
+}
+
 static void check_refloat(client_t* c)
 {
     xcb_get_property_cookie_t cookie = xcb_get_wm_transient_for(conn, c->win);
@@ -771,6 +780,7 @@ static void run()
     xcb_event_set_enter_notify_handler(&eh, enternotify, NULL);
     xcb_event_set_focus_in_handler(&eh, focusin, NULL);
     xcb_event_set_map_request_handler(&eh, maprequest, NULL);
+    xcb_event_set_map_notify_handler(&eh, mapnotify, NULL);
     xcb_event_set_property_notify_handler(&eh, propertynotify, NULL);
     xcb_event_set_unmap_notify_handler(&eh, unmapnotify, NULL);
 
