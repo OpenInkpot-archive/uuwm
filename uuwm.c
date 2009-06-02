@@ -352,6 +352,8 @@ static void detach(client_t *c)
 
 static void attachstack(client_t *c)
 {
+    debug("attachstack: %p (%d)\n", c, c->win);
+
     c->snext = stack;
     stack = c;
 }
@@ -411,6 +413,8 @@ static void set_focus(uint8_t revert_to, xcb_window_t focus)
 static void focus(client_t *c)
 {
     xcb_window_t win;
+
+    debug("focus: focusing %p (%d)\n", c, c ? c->win : -1);
 
     if(!c)
         c = stack;
@@ -612,6 +616,8 @@ static void scan()
 
 static void raise(client_t* c)
 {
+    debug("raise: %d (%d)\n", c, c ? c->win : -1);
+
     uint16_t mask = 0;
     xcb_params_configure_window_t params;
     XCB_AUX_ADD_PARAM(&mask, &params, stack_mode, XCB_STACK_MODE_ABOVE);
@@ -709,9 +715,13 @@ static int enternotify(void* p, xcb_connection_t* conn, xcb_enter_notify_event_t
 
 static int focusin(void* p, xcb_connection_t* conn, xcb_focus_in_event_t* e)
 {
+    debug("focusin: %d\n", e->event);
     /* there are some broken focus acquiring clients */
     if(stack && e->event != stack->win)
+    {
+        debug("focusin: setting focus back to top of stack: %d\n", stack->win);
         set_focus(XCB_INPUT_FOCUS_POINTER_ROOT, stack->win);
+    }
     return 0;
 }
 
@@ -815,6 +825,7 @@ static void run()
 
 static void cleanup()
 {
+    debug("cleanup: starting");
     while(stack)
         unmanage(stack);
     /* FIXME */
