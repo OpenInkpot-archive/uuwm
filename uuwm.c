@@ -418,13 +418,14 @@ static void focus(client_t *c)
 
     if(!c)
         c = stack;
-    if(c)
+    else
     {
         detachstack(c);
         attachstack(c);
-
-        win = c->win;
     }
+
+    if(c)
+        win = c->win;
     else
         win = screen->root;
 
