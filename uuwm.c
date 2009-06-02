@@ -699,21 +699,6 @@ static int destroynotify(void* p, xcb_connection_t* conn, xcb_destroy_notify_eve
     return 0;
 }
 
-/* Uhm? */
-static int enternotify(void* p, xcb_connection_t* conn, xcb_enter_notify_event_t* e)
-{
-    if((e->mode != XCB_NOTIFY_MODE_NORMAL
-        || e->detail == XCB_NOTIFY_DETAIL_INFERIOR) && e->event != screen->root)
-        return 0;
-
-    client_t* c = getclient(e->event);
-    if(c)
-        focus(c);
-    else
-        focus(NULL);
-    return 0;
-}
-
 static int focusin(void* p, xcb_connection_t* conn, xcb_focus_in_event_t* e)
 {
     debug("focusin: %d\n", e->event);
@@ -809,7 +794,6 @@ static void run()
     xcb_event_set_configure_request_handler(&eh, configurerequest, NULL);
     xcb_event_set_configure_notify_handler(&eh, configurenotify, NULL);
     xcb_event_set_destroy_notify_handler(&eh, destroynotify, NULL);
-    xcb_event_set_enter_notify_handler(&eh, enternotify, NULL);
     xcb_event_set_focus_in_handler(&eh, focusin, NULL);
     xcb_event_set_map_request_handler(&eh, maprequest, NULL);
     xcb_event_set_map_notify_handler(&eh, mapnotify, NULL);
