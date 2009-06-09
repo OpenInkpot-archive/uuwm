@@ -510,10 +510,13 @@ static void unmanage(client_t *c)
     debug("unmanage: %x (%x)\n", c, c ? c->win : -1);
     xcb_request_check(conn, xcb_grab_server_checked(conn));
 
-    uint16_t mask = 0;
-    xcb_params_configure_window_t params;
-    XCB_AUX_ADD_PARAM(&mask, &params, border_width, c->oldbw);
-    configure(c->win, mask, &params);
+    if(c->bw != c->oldbw)
+    {
+        uint16_t mask = 0;
+        xcb_params_configure_window_t params;
+        XCB_AUX_ADD_PARAM(&mask, &params, border_width, c->oldbw);
+        configure(c->win, mask, &params);
+    }
 
     detach(c);
     if(stack == c)
