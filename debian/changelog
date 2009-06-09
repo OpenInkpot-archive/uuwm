@@ -1,3 +1,10 @@
+uuwm (0.1-8) asimov; urgency=low
+
+  * Relax error checking in set_focus as windows may disappear at any
+    time.
+
+ -- Mikhail Gusarov <dottedmag@dottedmag.net>  Tue, 09 Jun 2009 23:01:03 +0700
+
 uuwm (0.1-7) asimov; urgency=low
 
   * Fixed bug when window in IsNotVisible state did not get raised to the
