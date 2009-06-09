@@ -1,3 +1,11 @@
+uuwm (0.1-7) asimov; urgency=low
+
+  * Fixed bug when window in IsNotVisible state did not get raised to the
+    top of stack while mapping again.
+  * Logging format improved.
+
+ -- Mikhail Gusarov <dottedmag@dottedmag.net>  Tue, 09 Jun 2009 22:51:02 +0700
+
 uuwm (0.1-6) asimov; urgency=low
 
   * Fixed de-focusing window if mouse pointer does not point to it.
