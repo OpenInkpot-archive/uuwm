@@ -432,6 +432,18 @@ static void focus(client_t *c)
     set_focus(XCB_INPUT_FOCUS_POINTER_ROOT, win);
 }
 
+static void raise(client_t* c)
+{
+    debug("raise: %x (%x)\n", c, c ? c->win : -1);
+
+    uint16_t mask = 0;
+    xcb_params_configure_window_t params;
+    XCB_AUX_ADD_PARAM(&mask, &params, stack_mode, XCB_STACK_MODE_ABOVE);
+    configure(c->win, mask, &params);
+
+    focus(c);
+}
+
 static void manage(xcb_window_t w)
 {
     debug("manage: win %x\n", w);
@@ -487,7 +499,9 @@ static void manage(xcb_window_t w)
     if(xcb_request_check(conn, xcb_map_window_checked(conn, w)))
         die("manage: unable to map window.\n");
 
-    debug("manage: win: %d, state: WM_STATE_NORMAL\n", c->win);
+    raise(c);
+
+    debug("manage: win: %x, state: WM_STATE_NORMAL\n", c->win);
     setclientstate(c, XCB_WM_STATE_NORMAL, false);
 }
 
@@ -614,18 +628,6 @@ static void scan()
     free(hints_cookies);
 
     focus(stack);
-}
-
-static void raise(client_t* c)
-{
-    debug("raise: %d (%d)\n", c, c ? c->win : -1);
-
-    uint16_t mask = 0;
-    xcb_params_configure_window_t params;
-    XCB_AUX_ADD_PARAM(&mask, &params, stack_mode, XCB_STACK_MODE_ABOVE);
-    configure(c->win, mask, &params);
-
-    focus(c);
 }
 
 static int configurerequest(void* p, xcb_connection_t* conn, xcb_configure_request_event_t* e)
