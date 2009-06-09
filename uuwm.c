@@ -400,10 +400,7 @@ static void set_focus(uint8_t revert_to, xcb_window_t focus)
     if(err)
     {
         debug("set_focus: error in xcb_set_focus (%d)\n", err->error_code);
-        if(err->error_code != XCB_WINDOW)
-            die("Unable to set input focus (%d) on %x (%d)\n",
-                revert_to, focus, err->error_code);
-        /* BadWindow is ignored, as windows may disappear at any time */
+        /* Errors are ignored, as windows may disappear at any time */
         free(err);
     }
     else
