@@ -155,14 +155,14 @@ static void configure_event(client_t* c)
                          XCB_EVENT_MASK_STRUCTURE_NOTIFY, (const char*)&e);
     xcb_generic_error_t* err = xcb_request_check(conn, cookie);
     if(err)
-        die("Unable to send configure event to %d (%d)\n", c->win,
+        die("Unable to send configure event to %x (%d)\n", c->win,
             err->error_code);
 }
 
 static void configure(xcb_window_t win, uint16_t mask,
                       xcb_params_configure_window_t* params)
 {
-    debug("configure: win: %d, mask %d\n", win, mask);
+    debug("configure: win: %x, mask %d\n", win, mask);
 
     xcb_void_cookie_t c
         = xcb_aux_configure_window(conn, win, mask, params);
@@ -215,7 +215,7 @@ static void arrange_updated(client_t* c, uint16_t m, xcb_params_configure_window
  */
 static void arrange(client_t* c)
 {
-    debug("arrange: client %d (is_floating: %d)\n", c, c->is_floating);
+    debug("arrange: client %x (is_floating: %d)\n", c, c->is_floating);
 
     uint16_t m = 0;
     xcb_params_configure_window_t p;
@@ -352,7 +352,7 @@ static void detach(client_t *c)
 
 static void attachstack(client_t *c)
 {
-    debug("attachstack: %p (%d)\n", c, c->win);
+    debug("attachstack: %x (%x)\n", c, c->win);
 
     c->snext = stack;
     stack = c;
@@ -392,7 +392,7 @@ static void setclientstate(client_t *c, long state, bool ignore_no_window)
 
 static void set_focus(uint8_t revert_to, xcb_window_t focus)
 {
-    debug("set_focus: win: %d\n", focus);
+    debug("set_focus: win: %x\n", focus);
 
     xcb_void_cookie_t c
         = xcb_set_input_focus_checked(conn, revert_to, focus, XCB_CURRENT_TIME);
@@ -414,7 +414,7 @@ static void focus(client_t *c)
 {
     xcb_window_t win;
 
-    debug("focus: focusing %p (%d)\n", c, c ? c->win : -1);
+    debug("focus: focusing %p (%x)\n", c, c ? c->win : -1);
 
     if(!c)
         c = stack;
@@ -434,7 +434,7 @@ static void focus(client_t *c)
 
 static void manage(xcb_window_t w)
 {
-    debug("manage: win %d\n", w);
+    debug("manage: win %x\n", w);
 
     client_t *c;
     if(!(c = calloc(1, sizeof(client_t))))
@@ -481,7 +481,7 @@ static void manage(xcb_window_t w)
 
     attach(c);
 
-    debug("manage: attaching %d to a stack\n", c->win);
+    debug("manage: attaching %x to a stack\n", c->win);
     attachstack(c);
 
     if(xcb_request_check(conn, xcb_map_window_checked(conn, w)))
@@ -493,6 +493,7 @@ static void manage(xcb_window_t w)
 
 static void unmanage(client_t *c)
 {
+    debug("unmanage: %x (%x)\n", c, c ? c->win : -1);
     xcb_request_check(conn, xcb_grab_server_checked(conn));
 
     uint16_t mask = 0;
@@ -701,11 +702,11 @@ static int destroynotify(void* p, xcb_connection_t* conn, xcb_destroy_notify_eve
 
 static int focusin(void* p, xcb_connection_t* conn, xcb_focus_in_event_t* e)
 {
-    debug("focusin: %d\n", e->event);
+    debug("focusin: %x\n", e->event);
     /* there are some broken focus acquiring clients */
     if(stack && e->event != stack->win)
     {
-        debug("focusin: setting focus back to top of stack: %d\n", stack->win);
+        debug("focusin: setting focus back to top of stack: %x\n", stack->win);
         set_focus(XCB_INPUT_FOCUS_POINTER_ROOT, stack->win);
     }
     return 0;
@@ -728,17 +729,17 @@ static int maprequest(void* p, xcb_connection_t* conn, xcb_map_request_event_t* 
 
 static int mapnotify(void* p, xcb_connection_t* conn, xcb_map_notify_event_t* e)
 {
-    debug("mapnotify: win: %d\n", e->window);
+    debug("mapnotify: win: %x\n", e->window);
     /* If newly mapped window is at top of stack, set the focus. It can't be
      * done at manage() as window is not visible yet there */
     if(stack && e->window == stack->win)
     {
-        debug("mapnotify: focusing %d\n", e->window);
+        debug("mapnotify: focusing %x\n", e->window);
         set_focus(XCB_INPUT_FOCUS_POINTER_ROOT, e->window);
     }
     else
     {
-        debug("mapnotify: not focusing %d.\n", stack ? stack->win : -1);
+        debug("mapnotify: not focusing %x.\n", stack ? stack->win : -1);
     }
 
     return 0;
