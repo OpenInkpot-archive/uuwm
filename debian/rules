@@ -28,6 +28,8 @@ install: build
 	dh_installdirs
 
 	$(MAKE) install DESTDIR=$(CURDIR)/debian/tmp PREFIX=/usr
+	mkdir -p $(CURDIR)/debian/tmp/etc/X11/Xsession.d
+	cp debian/05uuwm $(CURDIR)/debian/tmp/etc/X11/Xsession.d
 
 binary-indep:
 
