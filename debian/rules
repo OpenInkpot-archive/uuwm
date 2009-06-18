@@ -25,7 +25,6 @@ install: build
 	dh_testdir
 	dh_testroot
 	dh_clean -k
-	dh_installdirs
 
 	$(MAKE) install DESTDIR=$(CURDIR)/debian/tmp PREFIX=/usr
 	mkdir -p $(CURDIR)/debian/tmp/etc/X11/Xsession.d
