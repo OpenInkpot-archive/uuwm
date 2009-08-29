@@ -1,3 +1,13 @@
+uuwm (0.1-10) asimov; urgency=low
+
+  * Transient windows are raised when top-level window is raised (OI#329)
+  * uuwm did not pick up any window on restart due to broken WM hints
+    reading.
+  * Compatibility fix with newer xcb-util
+  * More verbose logging
+
+ -- Mikhail Gusarov <dottedmag@dottedmag.net>  Sat, 29 Aug 2009 16:22:13 +0700
+
 uuwm (0.1-9) asimov; urgency=low
 
   * Xsession.d snipped added.
