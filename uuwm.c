@@ -624,12 +624,8 @@ static void scan()
             continue;
         }
 
-        xcb_wm_hints_t hints;
-
-        /* Skip non-viewable and non-iconic windows */
-        if(info->map_state != XCB_MAP_STATE_VIEWABLE
-           || !xcb_get_wm_hints_from_reply(&hints, hints_reply)
-           || hints.initial_state == XCB_WM_STATE_ICONIC)
+        /* Skip non-viewable windows */
+        if(info->map_state != XCB_MAP_STATE_VIEWABLE)
         {
             free(info);
             free(transient_reply);
