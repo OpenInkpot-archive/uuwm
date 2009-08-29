@@ -431,6 +431,38 @@ static void focus(client_t *c)
     set_focus(XCB_INPUT_FOCUS_POINTER_ROOT, win);
 }
 
+static client_t* raise_transients_for(client_t* stack, client_t* c)
+{
+    debug("raise_transients: %x (%x) for: %x (%x)\n", stack, stack ? stack->win : 0, c, c->win);
+    if(!stack)
+        return c;
+
+    debug(" -> recurse\n");
+    client_t* last_raised = raise_transients_for(stack->snext, c);
+    debug(" <- back\n");
+
+    if(get_transient_for(stack->win) != c->win)
+    {
+        debug("window %x (%x) is not a transient for %x (%x)\n", stack, stack->win, c, c->win);
+        return last_raised;
+    }
+
+    debug("window %x (%x) is a transient for %x (%x).\n", stack, stack->win, c, c->win);
+
+    debug("raising %x (%x) above %x (%x)\n", stack, stack->win, last_raised, last_raised->win);
+
+    uint16_t mask = 0;
+    xcb_params_configure_window_t params;
+    XCB_AUX_ADD_PARAM(&mask, &params, sibling, last_raised->win);
+    XCB_AUX_ADD_PARAM(&mask, &params, stack_mode, XCB_STACK_MODE_ABOVE);
+    configure(stack->win, mask, &params);
+    focus(stack);
+
+    debug("marking %x (%x) as last raised\n", stack, stack->win);
+
+    return stack;
+}
+
 static void raise(client_t* c)
 {
     debug("raise: %x (%x)\n", c, c ? c->win : -1);
@@ -439,8 +471,12 @@ static void raise(client_t* c)
     xcb_params_configure_window_t params;
     XCB_AUX_ADD_PARAM(&mask, &params, stack_mode, XCB_STACK_MODE_ABOVE);
     configure(c->win, mask, &params);
-
     focus(c);
+
+    /* Walk through windows stack from bottom to top, raising the
+     transients. Focus the last raised window */
+
+    raise_transients_for(stack, c);
 }
 
 static void manage(xcb_window_t w)
