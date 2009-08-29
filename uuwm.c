@@ -489,7 +489,9 @@ static void manage(xcb_window_t w)
     c->win = w;
 
     xcb_window_t transient_for = get_transient_for(w);
-    c->is_floating = transient_for != XCB_NONE && getclient(transient_for) != NULL;
+    client_t* transient_for_client = getclient(transient_for);
+    debug(" transient_for: %x (%x)\n", transient_for_client, transient_for);
+    c->is_floating = transient_for != XCB_NONE && transient_for_client != NULL;
 
     xcb_get_geometry_reply_t* geom
         = xcb_get_geometry_reply(conn, xcb_get_geometry(conn, w), NULL);
@@ -570,6 +572,8 @@ static void unmanage(client_t *c)
 
 static void scan()
 {
+    debug("scan\n");
+
     xcb_query_tree_cookie_t c = xcb_query_tree(conn, screen->root);
 
     xcb_generic_error_t* err;
@@ -607,6 +611,9 @@ static void scan()
         xcb_get_property_reply_t* hints_reply
             = xcb_get_property_reply(conn, hints_cookies[i], NULL);
 
+        debug(" %x: info (%x), transient (%x), hints (%x)\n",
+              children[i], info, transient_reply, hints_reply);
+
         /* Skip windows which can't be queried about */
         if(!info)
         {
@@ -614,6 +621,8 @@ static void scan()
             free(hints_reply);
             continue;
         }
+
+        debug("  override_redirect: %d\n", !!info->override_redirect);
 
         /* Skip override-redirect windows */
         if(info->override_redirect)
@@ -623,6 +632,8 @@ static void scan()
             free(hints_reply);
             continue;
         }
+
+        debug("  map_state: %d\n", info->map_state);
 
         /* Skip non-viewable windows */
         if(info->map_state != XCB_MAP_STATE_VIEWABLE)
