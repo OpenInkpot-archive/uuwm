@@ -18,7 +18,7 @@ options:
 
 .c.o:
 	@echo CC $<
-	@${CC} -c ${CFLAGS} $<
+	@${CC} -c ${CFLAGS} -DOLD_XCB_AUX $<
 
 ${OBJ}: config.mk
 

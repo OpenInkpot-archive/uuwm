@@ -71,6 +71,7 @@ static int wx, wy, ww, wh; /* window area geometry x, y, w, h, docks excluded */
 static client_t *clients = NULL;
 static client_t *stack = NULL;
 
+#ifdef OLD_XCB_AUX
 /* Omission from xcb-aux */
 static void pack_list(uint32_t mask, const uint32_t *src, uint32_t *dest)
 {
@@ -90,6 +91,7 @@ xcb_aux_change_window_attributes_checked (xcb_connection_t      *c,
     return xcb_change_window_attributes_checked( c, window, mask, value_list );
 }
 /* End of omission */
+#endif
 
 static void die(const char* errstr, ...)
 {
