@@ -344,14 +344,16 @@ static void attach(client_t *c)
     clients = c;
 }
 
-static void detach(client_t *c)
+static void
+detach(client_t *c)
 {
     client_t **tc = &clients;
 
-    while(*tc && *tc != c)
+    while (*tc && *tc != c)
         tc = &(*tc)->next;
 
-    *tc = c->next;
+    if (*tc)
+        *tc = c->next;
 }
 
 static void attachstack(client_t *c)
@@ -362,14 +364,16 @@ static void attachstack(client_t *c)
     stack = c;
 }
 
-static void detachstack(client_t *c)
+static void
+detachstack(client_t *c)
 {
     client_t **tc = &stack;
 
-    while(*tc && *tc != c)
+    while (*tc && *tc != c)
         tc = &(*tc)->snext;
 
-    *tc = c->snext;
+    if (*tc)
+        *tc = c->snext;
 }
 
 static void setclientstate(client_t *c, long state, bool ignore_no_window)
