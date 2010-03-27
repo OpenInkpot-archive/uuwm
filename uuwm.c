@@ -24,6 +24,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <err.h>
 
 #include <xcb/xcb.h>
 #include <xcb/xcb_aux.h>
@@ -93,15 +94,6 @@ xcb_aux_change_window_attributes_checked (xcb_connection_t      *c,
 /* End of omission */
 #endif
 
-static void die(const char* errstr, ...)
-{
-    va_list ap;
-    va_start(ap, errstr);
-    vfprintf(stderr, errstr, ap);
-    va_end(ap);
-    exit(EXIT_FAILURE);
-}
-
 static void debug(const char* errstr, ...)
 {
     static bool _debug_init = false;
@@ -134,7 +126,7 @@ static void checkotherwm()
                                                    mask, &params);
 
     if(xcb_request_check(conn, c))
-        die("another window manager is already running\n");
+        errx(1, "another window manager is already running\n");
 }
 
 static void configure_event(client_t* c)
@@ -157,8 +149,8 @@ static void configure_event(client_t* c)
                          XCB_EVENT_MASK_STRUCTURE_NOTIFY, (const char*)&e);
     xcb_generic_error_t* err = xcb_request_check(conn, cookie);
     if(err)
-        die("Unable to send configure event to %x (%d)\n", c->win,
-            err->error_code);
+        errx(1, "Unable to send configure event to %x (%d)\n", c->win,
+             err->error_code);
 }
 
 static void configure(xcb_window_t win, uint16_t mask,
@@ -174,7 +166,7 @@ static void configure(xcb_window_t win, uint16_t mask,
     {
         debug("configure: xcb_aux_configure_window error: %d\n", err->error_code);
         if(err->error_code != XCB_WINDOW)
-            die("Unable to configure window %x (%d)\n", win, err->error_code);
+            errx(1, "Unable to configure window %x (%d)\n", win, err->error_code);
         /* BadWindow is ignored as windows may disappear at any time */
         free(err);
     }
@@ -255,7 +247,7 @@ static void intern_atoms(int count, xcb_atom_t atoms[], const char* atom_names[]
         xcb_intern_atom_reply_t* r
             = xcb_intern_atom_reply(conn, c[i], &err);
         if(!r)
-            die("Unable to intern atom %s\n", atom_names[i]);
+            errx(1, "Unable to intern atom %s\n", atom_names[i]);
         atoms[i] = r->atom;
         free(r);
     }
@@ -288,7 +280,7 @@ static void setup()
                                       atom + NetFirst);
 
     if(xcb_request_check(conn, c))
-        die("Unable to register myself as NetWM-compliant WM.\n");
+        errx(1, "Unable to register myself as NetWM-compliant WM.\n");
 
     /* select for events */
     uint32_t mask = 0;
@@ -307,8 +299,8 @@ static void setup()
 
     xcb_generic_error_t* e = xcb_request_check(conn, c2);
     if(e)
-        die("Unable to register event listener for root window: %d.\n",
-            e->error_code);
+        errx(1, "Unable to register event listener for root window: %d.\n",
+             e->error_code);
 }
 
 static xcb_window_t get_transient_for(xcb_window_t win)
@@ -388,7 +380,7 @@ static void setclientstate(client_t *c, long state, bool ignore_no_window)
             return;
         }
 
-        die("Unable to set client state.\n");
+        errx(1, "Unable to set client state.\n");
     }
 }
 
@@ -485,7 +477,7 @@ static void manage(xcb_window_t w)
 
     client_t *c;
     if(!(c = calloc(1, sizeof(client_t))))
-        die("fatal: could not malloc() %u bytes\n", sizeof(client_t));
+        errx(1, "fatal: could not malloc() %u bytes\n", sizeof(client_t));
     c->win = w;
 
     xcb_window_t transient_for = get_transient_for(w);
@@ -525,7 +517,7 @@ static void manage(xcb_window_t w)
             = xcb_aux_change_window_attributes_checked(conn, w, mask, &params);
 
         if(xcb_request_check(conn, c))
-            die("Unable to select events for window.\n");
+            errx(1, "Unable to select events for window.\n");
     }
 
     attach(c);
@@ -534,7 +526,7 @@ static void manage(xcb_window_t w)
     attachstack(c);
 
     if(xcb_request_check(conn, xcb_map_window_checked(conn, w)))
-        die("manage: unable to map window.\n");
+        errx(1, "manage: unable to map window.\n");
 
     raise(c);
 
@@ -579,7 +571,7 @@ static void scan()
     xcb_generic_error_t* err;
     xcb_query_tree_reply_t* tree = xcb_query_tree_reply(conn, c, &err);
     if(!tree)
-        die("Unable to query windows hierarchy.\n");
+        errx(1, "Unable to query windows hierarchy.\n");
 
     int len = xcb_query_tree_children_length(tree);
     xcb_window_t* children = xcb_query_tree_children(tree);
@@ -870,16 +862,16 @@ static void cleanup()
 int main(int argc, char *argv[])
 {
     if(argc == 2 && !strcmp("-v", argv[1]))
-        die("uuwm-"VERSION", © 2006-2009 uuwm engineers, see LICENSE for details\n");
+        errx(0, "uuwm-"VERSION", © 2006-2009 uuwm engineers, see LICENSE for details\n");
     else if(argc != 1)
-        die("usage: uuwm [-v]\n");
+        errx(1, "usage: uuwm [-v]\n");
 
     int default_screen;
     conn = xcb_connect(NULL, &default_screen);
     if(xcb_connection_has_error(conn))
-        die("uuwm: cannot open display %s\n", getenv("DISPLAY") ? getenv("DISPLAY") : "<NULL>");
+        errx(1, "uuwm: cannot open display %s\n", getenv("DISPLAY") ? getenv("DISPLAY") : "<NULL>");
     if(!(screen = xcb_aux_get_screen(conn, default_screen)))
-        die("uuwm: cannot obtain default screen\n");
+        errx(1, "uuwm: cannot obtain default screen\n");
 
     checkotherwm();
     setup();
