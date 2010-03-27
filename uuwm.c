@@ -376,7 +376,8 @@ detachstack(client_t *c)
         *tc = c->snext;
 }
 
-static void setclientstate(client_t *c, long state, bool ignore_no_window)
+static bool
+setclientstate(client_t *c, long state)
 {
     long data[] = {state, XCB_NONE};
 
@@ -386,16 +387,13 @@ static void setclientstate(client_t *c, long state, bool ignore_no_window)
             atom[WMState], 32, 2, (const void*)data);
 
     xcb_generic_error_t* err = xcb_request_check(conn, cookie);
-    if(err)
-    {
-        if(ignore_no_window && err->error_code == XCB_WINDOW)
-        {
-            free(err);
-            return;
-        }
-
-        errx(1, "Unable to set client state.\n");
+    if (err) {
+        warnx("Unable to set client state (%d).\n", err->error_code);
+        free(err);
+        return false;
     }
+
+    return true;
 }
 
 static bool
@@ -501,11 +499,8 @@ static void manage(xcb_window_t w)
 
     xcb_get_geometry_reply_t* geom
         = xcb_get_geometry_reply(conn, xcb_get_geometry(conn, w), NULL);
-    if(!geom)
-    {
-        free(c);
-        return;
-    }
+    if (!geom)
+        goto err;
 
     /* geometry */
     c->x = geom->x;
@@ -530,8 +525,10 @@ static void manage(xcb_window_t w)
         xcb_void_cookie_t c
             = xcb_aux_change_window_attributes_checked(conn, w, mask, &params);
 
-        if(xcb_request_check(conn, c))
-            errx(1, "Unable to select events for window.\n");
+        if (xcb_request_check(conn, c)) {
+            warnx("Unable to select events for window.\n");
+            goto err;
+        }
     }
 
     attach(c);
@@ -539,13 +536,27 @@ static void manage(xcb_window_t w)
     debug("manage: attaching %x to a stack\n", c->win);
     attachstack(c);
 
-    if(xcb_request_check(conn, xcb_map_window_checked(conn, w)))
-        errx(1, "manage: unable to map window.\n");
+    if (xcb_request_check(conn, xcb_map_window_checked(conn, w))) {
+        warnx("manage: unable to map window.\n");
+        goto err;
+    }
 
     raise(c);
 
     debug("manage: win: %x, state: WM_STATE_NORMAL\n", c->win);
-    setclientstate(c, XCB_WM_STATE_NORMAL, false);
+    if (!setclientstate(c, XCB_WM_STATE_NORMAL))
+        goto err;
+
+    return;
+err:
+    warn("manage: Error while trying to manage window %x", c->win);
+    detach(c);
+    if (stack == c) {
+        detachstack(c);
+        focus(NULL);
+    } else
+        detachstack(c);
+    free(c);
 }
 
 static void unmanage(client_t *c)
@@ -570,7 +581,7 @@ static void unmanage(client_t *c)
     else
         detachstack(c);
 
-    setclientstate(c, XCB_WM_STATE_WITHDRAWN, true);
+    setclientstate(c, XCB_WM_STATE_WITHDRAWN);
     free(c);
 
     xcb_request_check(conn, xcb_ungrab_server(conn));
