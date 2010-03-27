@@ -94,6 +94,16 @@ xcb_aux_change_window_attributes_checked (xcb_connection_t      *c,
 /* End of omission */
 #endif
 
+/* Allocs size zero-filled bytes or dies if unable to do so. */
+static void *
+xalloc(size_t size)
+{
+    void *res = calloc(1, size);
+    if (!res)
+        err(1, "Unable to alloc %d bytes", size);
+    return res;
+}
+
 static void debug(const char* errstr, ...)
 {
     static bool _debug_init = false;
@@ -235,7 +245,7 @@ static void updategeom()
 
 static void intern_atoms(int count, xcb_atom_t atoms[], const char* atom_names[])
 {
-    xcb_intern_atom_cookie_t* c = malloc(sizeof(xcb_intern_atom_cookie_t)*count);
+    xcb_intern_atom_cookie_t* c = xalloc(sizeof(xcb_intern_atom_cookie_t)*count);
 
     int i;
     for(i = 0; i < count; ++i)
@@ -384,21 +394,23 @@ static void setclientstate(client_t *c, long state, bool ignore_no_window)
     }
 }
 
-static void set_focus(uint8_t revert_to, xcb_window_t focus)
+static bool
+set_focus(uint8_t revert_to, xcb_window_t focus)
 {
     debug("set_focus: win: %x\n", focus);
 
     xcb_void_cookie_t c
         = xcb_set_input_focus_checked(conn, revert_to, focus, XCB_CURRENT_TIME);
     xcb_generic_error_t* err = xcb_request_check(conn, c);
-    if(err)
-    {
+    if (err) {
         debug("set_focus: error in xcb_set_focus (%d)\n", err->error_code);
         /* Errors are ignored, as windows may disappear at any time */
         free(err);
+        return false;
     }
-    else
-        debug("set_focus: ok\n");
+
+    debug("set_focus: ok\n");
+    return true;
 }
 
 static void focus(client_t *c)
@@ -475,9 +487,7 @@ static void manage(xcb_window_t w)
 {
     debug("manage: win %x\n", w);
 
-    client_t *c;
-    if(!(c = calloc(1, sizeof(client_t))))
-        errx(1, "fatal: could not malloc() %u bytes\n", sizeof(client_t));
+    client_t *c = xalloc(sizeof(client_t));
     c->win = w;
 
     xcb_window_t transient_for = get_transient_for(w);
@@ -577,11 +587,11 @@ static void scan()
     xcb_window_t* children = xcb_query_tree_children(tree);
 
     xcb_get_window_attributes_cookie_t* cookies
-        = malloc(sizeof(xcb_get_window_attributes_cookie_t) * len);
+        = xalloc(sizeof(xcb_get_window_attributes_cookie_t) * len);
     xcb_get_property_cookie_t* transient_cookies
-        = malloc(sizeof(xcb_get_property_cookie_t) * len);
+        = xalloc(sizeof(xcb_get_property_cookie_t) * len);
     xcb_get_property_cookie_t* hints_cookies
-        = malloc(sizeof(xcb_get_property_cookie_t) * len);
+        = xalloc(sizeof(xcb_get_property_cookie_t) * len);
 
     int i;
     for(i = 0; i < len; ++i) {
@@ -591,7 +601,7 @@ static void scan()
     }
 
     int ntransients = 0;
-    xcb_window_t* transients = malloc(len * sizeof(xcb_window_t));
+    xcb_window_t* transients = xalloc(len * sizeof(xcb_window_t));
 
     /* Non-transient */
     for(i = 0; i < len; ++i)
