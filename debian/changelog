@@ -1,3 +1,10 @@
+uuwm (0.1-11) zelazny; urgency=low
+
+  * Do not terminate if window disappears while trying to manage it
+  * Coding conventions and code cleanup
+
+ -- Mikhail Gusarov <dottedmag@dottedmag.net>  Sat, 27 Mar 2010 11:25:15 +0600
+
 uuwm (0.1-10) asimov; urgency=low
 
   * Transient windows are raised when top-level window is raised (OI#329)
